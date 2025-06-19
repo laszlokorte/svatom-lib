@@ -15,7 +15,7 @@
   "module": "src/index.svelte.js",
   "main": "src/index.svelte.js",
   "files": [
-    "src/index.mjs"
+    "src/index.mjs",
     "src/angle.mjs",
     "src/combinators.mjs",
     "src/events.mjs",
