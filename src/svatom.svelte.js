@@ -173,7 +173,7 @@ export function strictView(opticLense, someAtom) {
 
 export function mutableView(init, someAtom, equality = R.equals) {
 	let original = someAtom.value
-	let mutable = $state(init(original, undefined))
+	let mutable = $state.raw(init(original, undefined))
 
 	$effect(() => {
 		const newValue = someAtom.value
@@ -779,7 +779,7 @@ export function onPointerClick(node, fn) {
 }
 
 export function isFullscreen() {
-	let isFull = $state(document.fullscreenElement !== null)
+	let isFull = $state.raw(document.fullscreenElement !== null)
 
 	function updateFullScreenState() {
 		isFull = document.fullscreenElement !== null

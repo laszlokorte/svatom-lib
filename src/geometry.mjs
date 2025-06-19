@@ -1,3 +1,6 @@
+import * as L from "partial.lenses";
+import * as R from "ramda";
+
 export const offsetRect = (o) => [
 	L.applyAt("x", L.add(o)),
 	L.applyAt("y", L.add(o)),

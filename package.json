@@ -1,6 +1,6 @@
 {
   "name": "@svatom/basic",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "Helper functions for optics based CALMMjs architecture in svelte5",
   "keywords": [
     "svelte",
@@ -15,19 +15,33 @@
   "module": "src/index.svelte.js",
   "main": "src/index.svelte.js",
   "files": [
-    "src/svatom.svelte.js", 
-    "src/fsm.svelte.js", 
-    "./src/generators.mjs", 
-    "./src/geometry.mjs", 
-    "./combinators.mjs"
+    "src/index.mjs"
+    "src/angle.mjs",
+    "src/combinators.mjs",
+    "src/events.mjs",
+    "src/fsm.svelte.js",
+    "src/generators.mjs",
+    "src/geometry.mjs",
+    "src/num.mjs",
+    "src/polygons.mjs",
+    "src/string.mjs",
+    "src/svatom.svelte",
+    "src/viewbox.mjs"
   ],
+  "repository": "https://github.com/laszlokorte/svatom-lib",
   "exports": {
-    ".": "./src/index.svelte.js",
-    "./svatom.svelte.js": "./src/svatom.svelte.js",
-    "./fsm.svelte.js": "./src/fsm.svelte.js",
-    "./generators": "./src/generators.mjs",
-    "./geometry": "./src/geometry.mjs",
-    "./combinators": "./src/combinators.mjs"
+    ".": "src/index.mjs",
+    "./angle": "src/angle.mjs",
+    "./combinators": "src/combinators.mjs",
+    "./events": "src/events.mjs",
+    "./fsm.svelte.js": "src/fsm.svelte.js",
+    "./generators": "src/generators.mjs",
+    "./geometry": "src/geometry.mjs",
+    "./num": "src/num.mjs",
+    "./polygons": "src/polygons.mjs",
+    "./string": "src/string.mjs",
+    "./svatom.svelte.js": "src/svatom.svelte.js",
+    "./viewbox": "src/viewbox.mjs"
   },
   "devDependencies": {
     "vite": "^5.3.1",
