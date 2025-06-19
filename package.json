@@ -1,6 +1,6 @@
 {
   "name": "@svatom/basic",
-  "version": "1.0.4",
+  "version": "1.0.6",
   "description": "Helper functions for optics based CALMMjs architecture in svelte5",
   "keywords": [
     "svelte",
@@ -25,7 +25,7 @@
     "src/num.mjs",
     "src/polygons.mjs",
     "src/string.mjs",
-    "src/svatom.svelte",
+    "src/svatom.svelte.js",
     "src/viewbox.mjs"
   ],
   "repository": "https://github.com/laszlokorte/svatom-lib",
