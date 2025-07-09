@@ -1,5 +1,9 @@
 # Svatom Library
 
+---
+
+![NPM Version](https://img.shields.io/npm/v/%40svatom%2Fbasic)
+
 Collection of helper functions to apply the [CalmmJs](https://github.com/calmm-js/documentation/blob/master/introduction-to-calmm.md) architecture in [Svelte (version 5)](https://svelte.dev/)
 
 The core idea is to compose [lenses](https://github.com/calmm-js/partial.lenses) to construct a bidirectional data flow between UI components.
