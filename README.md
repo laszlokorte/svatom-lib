@@ -2,7 +2,7 @@
 
 ---
 
-![NPM Version](https://img.shields.io/npm/v/%40svatom%2Fbasic)
+[![NPM Version](https://img.shields.io/npm/v/%40svatom%2Fbasic)](https://www.npmjs.com/package/@svatom/basic)
 
 Collection of helper functions to apply the [CalmmJs](https://github.com/calmm-js/documentation/blob/master/introduction-to-calmm.md) architecture in [Svelte (version 5)](https://svelte.dev/)
 
