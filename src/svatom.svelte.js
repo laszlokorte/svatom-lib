@@ -2,7 +2,7 @@ import { get, set } from "partial.lenses";
 import * as R from "ramda";
 import { tick, untrack } from "svelte";
 
-export function storedAtom(id) {
+export function storedAtom(id, keepSync = true) {
   let root = $state.raw({ value: localStorage.getItem(id) });
 
   function onChange(evt) {
@@ -13,13 +13,15 @@ export function storedAtom(id) {
     }
   }
 
-  $effect(() => {
-    window.addEventListener("storage", onChange);
+  if (keepSync) {
+    $effect(() => {
+      window.addEventListener("storage", onChange);
 
-    return () => {
-      window.removeEventListener("storage", onChange);
-    };
-  });
+      return () => {
+        window.removeEventListener("storage", onChange);
+      };
+    });
+  }
 
   return {
     get value() {
