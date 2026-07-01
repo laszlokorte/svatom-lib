@@ -150,7 +150,9 @@ export function view(opticLense, someAtom) {
       return cached;
     },
     set value(newVal) {
-      const transformed = set(opticLense, newVal, cachedOriginal);
+      const transformed = untrack(() =>
+        set(opticLense, newVal, someAtom.value),
+      );
 
       if (!(transformed instanceof Error)) {
         someAtom.value = transformed;
@@ -696,7 +698,7 @@ export const bindScrollMax = (someAtom) => (node) => {
 
 export const bindBoundingBox = (someAtom) => (node) => {
   let oldV;
-  $effect.pre(() => {
+  $effect(() => {
     tick().then(() => {
       const bbox = node.getBBox();
       if (bbox.width || bbox.height) {
