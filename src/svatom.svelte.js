@@ -729,21 +729,19 @@ export const readTextreaScrollSize = (someAtom) => (node) => {
   };
 };
 
-export function autofocusIf(node, yes) {
-  if (yes) {
-    $effect(() => {
-      if (yes && document.activeElement !== node) {
-        node.focus({
-          preventScroll: true,
-        });
-      } else if (!yes && document.activeElement === node) {
-        node.blur();
-      }
-    });
-  }
+export const autofocusIf = (yes) => (node) => {
+  $effect(() => {
+    if (yes && document.activeElement !== node) {
+      node.focus({
+        preventScroll: true,
+      });
+    } else if (!yes && document.activeElement === node) {
+      node.blur();
+    }
+  });
 
   return () => {};
-}
+};
 
 export const activeEvent =
   ({ eventType, fn }) =>
@@ -755,30 +753,27 @@ export const activeEvent =
     };
   };
 
-export const activeTouchMove = (fn) => (node) => {
-  return activeEvent(node, { eventType: "touchmove", fn });
+export const activeTouchMove = (fn) => {
+  return activeEvent({ eventType: "touchmove", fn });
 };
 
-export const disableTouchEventsIf = (atom) => (node) => {
-  return activeTouchMove(node, (evt) => {
+export const disableTouchEventsIf = (atom) => {
+  return activeTouchMove((evt) => {
     if (atom.value) {
       evt.preventDefault();
     }
   });
 };
 
-export const disableEventIf =
-  ({ eventType, cond }) =>
-  (node) => {
-    return activeEvent(node, {
-      eventType,
-      fn: (evt) => {
-        if (cond === true || (cond !== false && cond.value)) {
-          evt.preventDefault();
-        }
-      },
-    });
-  };
+export const disableEventIf = ({ eventType, cond }) =>
+  activeEvent({
+    eventType,
+    fn: (evt) => {
+      if (cond === true || (cond !== false && cond.value)) {
+        evt.preventDefault();
+      }
+    },
+  });
 
 export const onPointerClick = (fn) => (node) => {
   let wasDown = false;
