@@ -252,6 +252,9 @@ export function animateWith(someAtom, fn) {
     if (currentVal) {
       currentVal.el.addEventListener("contextrestored", restore);
       function tick() {
+        if (raf === null) {
+          return;
+        }
         const currentVal = someAtom.value;
         if (currentVal) {
           fn(currentVal);
@@ -271,7 +274,7 @@ export function animateWith(someAtom, fn) {
   });
 }
 
-export function adjustSize(node, someAtom) {
+export const adjustSize = (someAtom) => (node) => {
   let prevX = 0;
   let prevY = 0;
 
@@ -291,7 +294,7 @@ export function adjustSize(node, someAtom) {
       });
     }
   });
-}
+};
 
 export function failableView(
   opticLense,
@@ -490,7 +493,7 @@ function restoreSelection(target, cb) {
   }
 }
 
-export function bindValue(node, someAtom) {
+export const bindValue = (someAtom) => (node) => {
   function oninput(e) {
     const target = e.currentTarget;
 
@@ -515,13 +518,11 @@ export function bindValue(node, someAtom) {
   node.addEventListener("input", oninput);
   node.addEventListener("change", oninput);
 
-  return {
-    destroy: () => {
-      node.removeEventListener("input", oninput);
-      node.removeEventListener("change", oninput);
-    },
+  return () => {
+    node.removeEventListener("input", oninput);
+    node.removeEventListener("change", oninput);
   };
-}
+};
 
 export function throttled(fn) {
   let ticking = false;
@@ -538,7 +539,7 @@ export function throttled(fn) {
   };
 }
 
-export function bindScroll(node, someAtom) {
+export const bindScroll = (someAtom) => (node) => {
   let skipScroll = false;
   let resumeScroll = null;
   const onScrollThrottled = function onscroll(e) {
@@ -605,9 +606,9 @@ export function bindScroll(node, someAtom) {
   return () => {
     node.removeEventListener("scroll", onScrollThrottled, { passive: true });
   };
-}
+};
 
-export function readScroll(node, someAtom) {
+export const readScroll = (someAtom) => (node) => {
   const onScrollThrottled = throttled(function onscroll(e) {
     const newValue = someAtom.value;
     const nodeScrollLeft = node.scrollLeft;
@@ -625,9 +626,9 @@ export function readScroll(node, someAtom) {
   return () => {
     node.removeEventListener("scroll", onScrollThrottled, { passive: true });
   };
-}
+};
 
-export function bindSize(node, someAtom) {
+export const bindSize = (someAtom) => (node) => {
   const resizeObserver = new ResizeObserver((entries) => {
     for (const entry of entries) {
       if (entry.borderBoxSize) {
@@ -647,11 +648,11 @@ export function bindSize(node, someAtom) {
   resizeObserver.observe(node);
 
   return () => {
-    resizeObserver.disconnect();
+    resizeObserver.unobserve(node);
   };
-}
+};
 
-export function bindScrollMax(node, someAtom) {
+export const bindScrollMax = (someAtom) => (node) => {
   // TODO specialize code for different kind of elements
   const resizeObserver = new ResizeObserver(() => {
     someAtom.value = {
@@ -688,12 +689,12 @@ export function bindScrollMax(node, someAtom) {
 
   return () => {
     node.removeEventListener("input", onInput);
-    mutObserver.unobserve(node);
+    mutObserver.disconnect();
     resizeObserver.unobserve(node);
   };
-}
+};
 
-export function bindBoundingBox(node, someAtom) {
+export const bindBoundingBox = (someAtom) => (node) => {
   let oldV;
   $effect.pre(() => {
     tick().then(() => {
@@ -708,15 +709,12 @@ export function bindBoundingBox(node, someAtom) {
     });
   });
 
-  return {
-    update(newAtom) {},
-    destroy() {
-      someAtom.value = undefined;
-    },
+  return () => {
+    someAtom.value = undefined;
   };
-}
+};
 
-export function readTextreaScrollSize(node, someAtom) {
+export const readTextreaScrollSize = (someAtom) => (node) => {
   function oninput(e) {
     someAtom.value = {
       x: node.scrollWidth,
@@ -729,78 +727,60 @@ export function readTextreaScrollSize(node, someAtom) {
   return () => {
     node.removeEventListener("input", oninput);
   };
-}
+};
 
 export function autofocusIf(node, yes) {
   if (yes) {
-    if (yes && document.activeElement !== node) {
-      $effect(() => {
+    $effect(() => {
+      if (yes && document.activeElement !== node) {
         node.focus({
           preventScroll: true,
         });
-      });
-    } else if (!yes && document.activeElement === node) {
-      $effect(() => {
+      } else if (!yes && document.activeElement === node) {
         node.blur();
-      });
-    }
+      }
+    });
   }
 
-  return {
-    update(yes) {
-      if (yes && document.activeElement !== node) {
-        $effect(() => {
-          node.focus({
-            preventScroll: true,
-          });
-        });
-      } else if (!yes && document.activeElement === node) {
-        $effect(() => {
-          node.blur();
-        });
-      }
-    },
-
-    destroy() {
-      // the node has been removed from the DOM
-    },
-  };
+  return () => {};
 }
 
-export function activeEvent(node, { eventType, fn }) {
-  node.addEventListener(eventType, fn, { passive: false });
+export const activeEvent =
+  ({ eventType, fn }) =>
+  (node) => {
+    node.addEventListener(eventType, fn, { passive: false });
 
-  return {
-    destroy() {
+    return () => {
       node.removeEventListener(eventType, fn, { passive: false });
-    },
+    };
   };
-}
 
-export function activeTouchMove(node, fn) {
+export const activeTouchMove = (fn) => (node) => {
   return activeEvent(node, { eventType: "touchmove", fn });
-}
+};
 
-export function disableTouchEventsIf(node, atom) {
+export const disableTouchEventsIf = (atom) => (node) => {
   return activeTouchMove(node, (evt) => {
     if (atom.value) {
       evt.preventDefault();
     }
   });
-}
+};
 
-export function disableEventIf(node, { eventType, cond }) {
-  return activeEvent(node, {
-    eventType,
-    fn: (evt) => {
-      if (cond === true || (cond !== false && cond.value)) {
-        evt.preventDefault();
-      }
-    },
-  });
-}
+export const disableEventIf =
+  ({ eventType, cond }) =>
+  (node) => {
+    return activeEvent(node, {
+      eventType,
+      fn: (evt) => {
+        if (cond === true || (cond !== false && cond.value)) {
+          evt.preventDefault();
+        }
+      },
+    });
+  };
 
-export function onPointerClick(node, fn) {
+export const onPointerClick = (fn) => (node) => {
   let wasDown = false;
   const onDown = (evt) => {
     evt.stopPropagation();
@@ -826,7 +806,7 @@ export function onPointerClick(node, fn) {
     node.removeEventListener("click", onClick);
     node.removeEventListener("pointerdown", onDown);
   };
-}
+};
 
 export function isFullscreen() {
   let isFull = $state.raw(document.fullscreenElement !== null);
