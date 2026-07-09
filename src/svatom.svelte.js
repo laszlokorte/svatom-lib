@@ -230,12 +230,12 @@ export function during(someAtom, fn) {
 
   toggle(someAtom, (val) => {
     if (val) {
-      function tick() {
+      function frame() {
         fn(someAtom.value);
-        raf = requestAnimationFrame(tick);
+        raf = requestAnimationFrame(frame);
       }
 
-      tick();
+      frame();
     } else {
       cancelAnimationFrame(raf);
       raf = null;
@@ -253,18 +253,18 @@ export function animateWith(someAtom, fn) {
     };
     if (currentVal) {
       currentVal.el.addEventListener("contextrestored", restore);
-      function tick() {
+      function frame() {
         if (raf === null) {
           return;
         }
         const currentVal = someAtom.value;
         if (currentVal) {
           fn(currentVal);
-          raf = requestAnimationFrame(tick);
+          raf = requestAnimationFrame(frame);
         }
       }
 
-      tick();
+      frame();
 
       return () => {
         currentVal.el.removeEventListener("contextrestored", restore);
@@ -280,20 +280,19 @@ export const adjustSize = (someAtom) => (node) => {
   let prevX = 0;
   let prevY = 0;
 
-  $effect.pre(() => {
+  $effect.pre(async () => {
     const newVal = someAtom.value;
 
     if (prevX !== newVal.x) {
       prevX = newVal.x;
-      tick().then(() => {
-        node.width = prevX;
-      });
+      await tick();
+
+      node.width = prevX;
     }
     if (prevY !== newVal.y) {
       prevY = newVal.y;
-      tick().then(() => {
-        node.height = prevY;
-      });
+      await tick();
+      node.height = prevY;
     }
   });
 };
@@ -437,11 +436,10 @@ export function string(parts, ...args) {
 export function delayedRead(lens, someAtom) {
   const later = atom(L.get(lens, someAtom.value));
 
-  $effect.pre(() => {
+  $effect.pre(async () => {
     later.value = L.get(lens, someAtom.value);
-    tick().then(() => {
-      later.value = L.get(lens, someAtom.value);
-    });
+    await tick();
+    later.value = L.get(lens, someAtom.value);
   });
 
   return read(L.identity, later);
@@ -450,18 +448,16 @@ export function delayedRead(lens, someAtom) {
 export function delayed(lens, someAtom) {
   const later = atom(L.get(lens, someAtom.value));
 
-  $effect.pre(() => {
+  $effect.pre(async () => {
     later.value = L.get(lens, someAtom.value);
-    tick().then(() => {
-      later.value = L.get(lens, someAtom.value);
-    });
+    await tick();
+    later.value = L.get(lens, someAtom.value);
   });
 
-  $effect.pre(() => {
+  $effect.pre(async () => {
     someAtom.value = L.set(lens, instant.value, someAtom.value);
-    tick().then(() => {
-      someAtom.value = L.set(lens, instant.value, someAtom.value);
-    });
+    await tick();
+    someAtom.value = L.set(lens, instant.value, someAtom.value);
   });
 
   return later;
@@ -542,12 +538,7 @@ export function throttled(fn) {
 }
 
 export const bindScroll = (someAtom) => (node) => {
-  let skipScroll = false;
-  let resumeScroll = null;
   const onScrollThrottled = function onscroll(e) {
-    if (skipScroll) {
-      return;
-    }
     const newValue = someAtom.value;
     const newValueX = Math.round(newValue.x);
     const newValueY = Math.round(newValue.y);
@@ -572,35 +563,32 @@ export const bindScroll = (someAtom) => (node) => {
     }
   };
 
-  $effect.pre(() => {
+  $effect.pre(async () => {
     const newPos = someAtom.value;
-    return tick().then(function bindScrollEffect() {
-      const scrollMaxX = Math.max(
-        0,
-        node.scrollLeftMax ?? node.scrollWidth - node.offsetWidth,
-      );
-      const scrollMaxY = Math.max(
-        0,
-        node.scrollTopMax ?? node.scrollHeight - node.offsetHeight,
-      );
-      const newX = Math.round(R.clamp(0, scrollMaxX, newPos.x));
-      const newY = Math.round(R.clamp(0, scrollMaxY, newPos.y));
-      const oldX = Math.round(R.clamp(0, scrollMaxX, node.scrollLeft));
-      const oldY = Math.round(R.clamp(0, scrollMaxY, node.scrollTop));
+    await tick();
+    const scrollMaxX = Math.max(
+      0,
+      node.scrollLeftMax ?? node.scrollWidth - node.offsetWidth,
+    );
+    const scrollMaxY = Math.max(
+      0,
+      node.scrollTopMax ?? node.scrollHeight - node.offsetHeight,
+    );
+    const newX = Math.round(R.clamp(0, scrollMaxX, newPos.x));
+    const newY = Math.round(R.clamp(0, scrollMaxY, newPos.y));
+    const oldX = Math.round(R.clamp(0, scrollMaxX, node.scrollLeft));
+    const oldY = Math.round(R.clamp(0, scrollMaxY, node.scrollTop));
 
-      if (oldX != newX || oldY != newY) {
-        clearTimeout(resumeScroll);
-        skipScroll = true;
-        node.scrollTo({
-          left: newX,
-          top: newY,
-          behavior: "instant",
-        });
-        resumeScroll = setTimeout(() => {
-          skipScroll = false;
-        }, 10);
-      }
-    });
+    const dX = Math.abs(oldX - newX);
+    const dY = Math.abs(oldY - newY);
+
+    if (dX >= 1 || dY >= 1) {
+      node.scrollTo({
+        left: newX,
+        top: newY,
+        behavior: "instant",
+      });
+    }
   });
 
   node.addEventListener("scroll", onScrollThrottled, { passive: true });
@@ -698,17 +686,16 @@ export const bindScrollMax = (someAtom) => (node) => {
 
 export const bindBoundingBox = (someAtom) => (node) => {
   let oldV;
-  $effect(() => {
-    tick().then(() => {
-      const bbox = node.getBBox();
-      if (bbox.width || bbox.height) {
-        oldV = { x: bbox.x, y: bbox.y, width: bbox.width, height: bbox.height };
-        someAtom.value = oldV;
-      } else {
-        oldV = undefined;
-        someAtom.value = undefined;
-      }
-    });
+  $effect(async () => {
+    await tick();
+    const bbox = node.getBBox();
+    if (bbox.width || bbox.height) {
+      oldV = { x: bbox.x, y: bbox.y, width: bbox.width, height: bbox.height };
+      someAtom.value = oldV;
+    } else {
+      oldV = undefined;
+      someAtom.value = undefined;
+    }
   });
 
   return () => {
